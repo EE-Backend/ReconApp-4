@@ -437,8 +437,7 @@ def build_workbook(trial_balance, entries, map_dir, ICP):
 
 def finalize_and_save(trial_balance, entries, map_dir, ICP,
                       build_fn=build_workbook,
-                      plc_filename="PLC.xlsx",
-                      output_path=output_file):
+                      plc_filename="PLC.xlsx"):
     """
     Build full workbook (calls build_workbook), add front page, format numbers/dates,
     save workbook and color sheet tabs with xlwings.
