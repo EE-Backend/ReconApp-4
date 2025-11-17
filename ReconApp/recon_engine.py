@@ -666,6 +666,42 @@ def finalize_and_save(trial_balance, entries, map_dir, ICP,
     return str(saved_path)
 
 
+# ============================================================
+# PUBLIC FUNCTION CALLED FROM STREAMLIT
+# ============================================================
+
+def generate_reconciliation_file(trial_balance_file, entries_file, icp_code):
+    """
+    Streamlit passes uploaded files (file-like objects) to this function.
+    This function returns the Excel file as bytes.
+    """
+
+    # 1. Load trial balance & entries (from uploaded files)
+    trial_balance_df = pd.read_excel(trial_balance_file)
+    entries_df = pd.read_excel(entries_file)
+
+    # 2. Load internal mapping files
+    mapping_accounts_df = pd.read_excel("static/mapping.xlsx", sheet_name="account_mapping")
+    mapping_dir_df      = pd.read_excel("static/mapping.xlsx", sheet_name="mapping_directory")
+
+    plc_df = pd.read_excel("static/PLC.xlsx")
+
+    # 3. Build workbook in memory
+    output_path = "Reconciliation_Mapped.xlsx"
+
+    saved_path = finalize_and_save(
+        trial_balance_df,
+        entries_df,
+        mapping_dir_df,
+        icp_code,
+        build_fn=build_recon_workbook,
+        plc_filename="PLC.xlsx",
+        output_path=output_path
+    )
+
+    # 4. Return file bytes to Streamlit
+    with open(saved_path, "rb") as f:
+        return f.read()
 
 
 
