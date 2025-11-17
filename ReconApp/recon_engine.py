@@ -81,7 +81,7 @@ plc_df = load_internal_plc()
 # -----------
 
  # === CREATE WORKBOOK ===
-def build_workbook(trial_balance, entries, map_dir, ICP):
+def build_recon_workbook(trial_balance, entries, map_dir, ICP):
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
 
