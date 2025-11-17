@@ -641,7 +641,7 @@ def generate_reconciliation_file(trial_balance_file, entries_file, icp_code):
     mapping_accounts_df = pd.read_excel("ReconApp/static/mapping.xlsx", sheet_name="account_mapping")
     mapping_dir_df      = pd.read_excel("ReconApp/static/mapping.xlsx", sheet_name="mapping_directory")
 
-    plc_df = pd.read_excel("static/PLC.xlsx")
+    plc_df = pd.read_excel("ReconApp/static/PLC.xlsx")
 
     # 3. Build workbook in memory
     output_path = "Reconciliation_Mapped.xlsx"
