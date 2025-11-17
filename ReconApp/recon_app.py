@@ -17,7 +17,7 @@ st.write("Upload the required files below and generate a standardized reconcilia
 
 
 # --- LOGO (optional) --- #
-logo_path = Path("static/company_logo.png")
+logo_path = Path("ReconApp/static/company_logo.png")
 if logo_path.exists():
     st.image(str(logo_path), width=200)
 
@@ -73,3 +73,4 @@ if generate_button:
 
 st.write("---")
 st.caption("EE Internal Tool — Powered by Streamlit")
+
