@@ -24,7 +24,7 @@ logo_path = STATIC_DIR / "logo.png"   # your actual logo
 
 
 # -------------------------------------------------------
-# HEADER — Tight spacing + perfect vertical alignment
+# HEADER — Logo + Title (very tight spacing)
 # -------------------------------------------------------
 col1, col2 = st.columns([1, 6])
 
@@ -40,8 +40,8 @@ with col2:
         <div style="
             display:flex;
             align-items:center;
-            height:110px;              /* same as image height ensures centering */
-            margin-left:-40px;         /* pull title closer to logo */
+            height:110px;
+            margin-left:-80px;    /* ← reduce space between logo + title */
         ">
             <h1 style="
                 margin:0;
@@ -54,6 +54,7 @@ with col2:
         """,
         unsafe_allow_html=True
     )
+
 
 
 # -------------------------------------------------------
@@ -117,6 +118,7 @@ if generate_button:
 # -------------------------------------------------------
 st.write("---")
 st.caption("EE Internal Tool — Powered by Streamlit")
+
 
 
 
