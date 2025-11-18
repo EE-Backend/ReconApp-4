@@ -688,13 +688,7 @@ def finalize_workbook_to_bytes(
             ],
             "Add documentation for Bank account",
         ),
-        # Mortgage credit institutions
-        (
-            [
-                (621000, 628800),
-            ],
-            "Add documentation for Mortgage credit institutions",
-        ),
+       
         # Trade payables
         (
             [
