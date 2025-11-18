@@ -12,14 +12,37 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("📊 EE Recon File Generator")
 st.write("Upload the required files below and generate a standardized reconciliation workbook.")
 
 
-# --- LOGO (optional) --- #
+# --- LOGO (optional but recommended) --- #
 logo_path = Path("ReconApp/static/company_logo.png")
+
+st.markdown("""
+    <style>
+        .logo-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .logo-text {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-left: 15px;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+st.markdown('<div class="logo-container">', unsafe_allow_html=True)
+
+# Insert logo image if it exists
 if logo_path.exists():
-    st.image(str(logo_path), width=200)
+    st.image(str(logo_path), width=150)
+
+# Insert title next to the logo
+st.markdown('<div class="logo-text"> EE Recon File Generator</div>', unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 
 st.header("Step 1 — Upload Inputs")
@@ -73,4 +96,5 @@ if generate_button:
 
 st.write("---")
 st.caption("EE Internal Tool — Powered by Streamlit")
+
 
