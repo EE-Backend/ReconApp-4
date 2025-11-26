@@ -608,20 +608,20 @@ def finalize_workbook_to_bytes(
         comments.append("All sheets appear balanced within tolerance limits.")
 
     comments_top = row_ptr
-    header_cell = ws_front.cell(row_ptr, 1, "Automatically generated comments:")
+    header_cell = ws_front.cell(row_ptr, 1, "Comments:")
     header_cell.font = Font(bold=True, underline="single")
-    for c in range(1, 5):
-        ws_front.cell(row_ptr, c).fill = header_fill
+    #Only colour column A
+    ws_front.cell(row_ptr, 1).fill = header_fill
     row_ptr += 1
-
+    
     start_row = row_ptr
     for i, comment in enumerate(comments, start=start_row):
-        for c in range(1, 5):
-            ws_front.cell(i, c).fill = entry_fill
+        ws_front.cell(i, 1).fill = entry_fill
         ws_front.cell(i, 1, f"• {comment}")
     comments_bottom = start_row + len(comments) - 1
-
-    apply_borders(ws_front, top=comments_top, bottom=comments_bottom, left=1, right=4)
+    
+    # Border only around column A
+    apply_borders(ws_front, top=comments_top, bottom=comments_bottom, left=1, right=1)
 
     row_ptr = comments_bottom + 2
 
