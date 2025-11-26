@@ -130,7 +130,7 @@ red_fill = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="soli
 header_fill = PatternFill(start_color="F8CBAD", end_color="F8CBAD", fill_type="solid")  # header darker
 entry_fill = PatternFill(start_color="FCE4D6", end_color="FCE4D6", fill_type="solid")   # lighter
 total_fill = PatternFill(start_color="F8CBAD", end_color="F8CBAD", fill_type="solid")    # totals
-
+plc_fill = PatternFill(start_color="9AD29F", end_color="9AD29F", fill_type="solid")
 
 def apply_borders(ws, top, bottom, left, right):
     """
@@ -532,18 +532,22 @@ def finalize_workbook_to_bytes(
         plc_norm = None
 
     # Add PLC cards for selected ICP(s)
+    
     selected_icps = [ICP]
     row_ptr = 3
     for icp in selected_icps:
         icp_key = str(icp).strip().upper()
         row = plc_norm.loc[plc_norm["ICP code_norm"] == icp_key] if plc_norm is not None else pd.DataFrame()
-        ws_front.cell(row_ptr, 1, "ICP code").font = Font(bold=True)
-        ws_front.cell(row_ptr, 2, icp_key)
 
+        # Labels
+        ws_front.cell(row_ptr, 1, "ICP code").font = Font(bold=True)
         ws_front.cell(row_ptr + 1, 1, "Company name").font = Font(bold=True)
         ws_front.cell(row_ptr + 2, 1, "Accountant").font = Font(bold=True)
         ws_front.cell(row_ptr + 3, 1, "Controller").font = Font(bold=True)
+        ws_front.cell(row_ptr + 4, 1, "Current Quarter").font = Font(bold=True)
 
+        # Values
+        ws_front.cell(row_ptr, 2, icp_key)
         if not row.empty:
             ws_front.cell(row_ptr + 1, 2, row.iloc[0]["Company name"])
             ws_front.cell(row_ptr + 2, 2, row.iloc[0]["Accountant"])
@@ -553,16 +557,20 @@ def finalize_workbook_to_bytes(
             ws_front.cell(row_ptr + 2, 2, "—")
             ws_front.cell(row_ptr + 3, 2, "—")
 
-        ws_front.cell(row_ptr + 4, 1, "Current Quarter").font = Font(bold=True)
         if quarter:
             ws_front.cell(row_ptr + 4, 2, str(quarter))
 
-        apply_borders(ws_front, top=row_ptr, bottom=row_ptr + 4, left=1, right=2)
-        row_ptr += 7
+        # Colour PLC block
+        for r in range(row_ptr, row_ptr + 5):       # rows row_ptr .. row_ptr+4
+            for c in range(1, 3):                   # columns A:B
+                ws_front.cell(r, c).fill = plc_fill
 
-    row_ptr += 1
-    ws_front.cell(row_ptr, 1, "Automatically generated comments:").font = Font(bold=True, underline="single")
-    row_ptr += 2
+        # Border around PLC + Quarter
+        apply_borders(ws_front, top=row_ptr, bottom=row_ptr + 4, left=1, right=2)
+
+        row_ptr += 7   # leave a couple of blank rows after the block
+
+     row_ptr += 1
 
     # Quick checks for frontpage comments
     comments = []
@@ -601,10 +609,23 @@ def finalize_workbook_to_bytes(
         comments.append("No issues detected based on configured checks.")
 
     # Write bullet comments
+    comments_top = row_ptr
+    header_cell = ws_front.cell(row_ptr, 1, "Automatically generated comments:")
+    header_cell.font = Font(bold=True, underline="single")
+    for c in range(1, 5):
+        ws_front.cell(row_ptr, c).fill = header_fill
+    row_ptr += 1
+
     start_row = row_ptr
     for i, comment in enumerate(comments, start=start_row):
+        for c in range(1, 5):
+            ws_front.cell(i, c).fill = entry_fill
         ws_front.cell(i, 1, f"• {comment}")
-    row_ptr = start_row + len(comments) + 2
+    comments_bottom = start_row + len(comments) - 1
+# Border around the comments box (cols A:D)
+    apply_borders(ws_front, top=comments_top, bottom=comments_bottom, left=1, right=4)
+
+    row_ptr = comments_bottom + 2
 
     # Detailed lists with hyperlinks to anchors (internal)
     def set_hyperlink(cell, acc_no):
@@ -615,15 +636,21 @@ def finalize_workbook_to_bytes(
             cell.hyperlink = f"#{sheet_ref}!A{anchor_row}"
             cell.style = "Hyperlink"
 
-    # 1) Accounts out of balance (TB vs entries) – FIRST
+##
+   # 1) Accounts out of balance (TB vs entries) – FIRST
     if mismatch_accounts:
-        ws_front.cell(row_ptr, 1, "Accounts out of balance (TB vs entries):").font = Font(bold=True)
+        block_top = row_ptr
+        title_cell = ws_front.cell(row_ptr, 1, "Accounts out of balance (TB vs entries):")
+        title_cell.font = Font(bold=True)
+        for c in range(1, 6):
+            ws_front.cell(row_ptr, c).fill = red_fill
         row_ptr += 1
 
         headers = ["Account", "Name", "TB balance", "Entries sum", "Difference"]
         for col_idx, h in enumerate(headers, start=1):
             cell = ws_front.cell(row_ptr, col_idx, h)
             cell.font = Font(bold=True)
+            cell.fill = red_fill
         row_ptr += 1
 
         for m in mismatch_accounts:
@@ -640,14 +667,31 @@ def finalize_workbook_to_bytes(
             ent_cell.number_format = "#,##0.00"
             diff_cell.number_format = "#,##0.00"
 
+            # colour entire row red (error emphasis)
+            for c in range(1, 6):
+                ws_front.cell(row_ptr, c).fill = red_fill
+
             row_ptr += 1
 
+        block_bottom = row_ptr - 1
+        apply_borders(ws_front, top=block_top, bottom=block_bottom, left=1, right=5)
         row_ptr += 1  # spacing
+
+
+
+##
+
+
 
     # 2) Negative balances
     if not negatives.empty:
-        ws_front.cell(row_ptr, 1, "Negative balances (200000–399999):").font = Font(bold=True)
+        neg_top = row_ptr
+        title_cell = ws_front.cell(row_ptr, 1, "Negative balances (200000–399999):")
+        title_cell.font = Font(bold=True)
+        for c in range(1, 4):
+            ws_front.cell(row_ptr, c).fill = header_fill
         row_ptr += 1
+
         for _, r in negatives.iterrows():
             acc = str(r["No."])
             c = ws_front.cell(row_ptr, 1, acc)
@@ -655,12 +699,24 @@ def finalize_workbook_to_bytes(
             ws_front.cell(row_ptr, 2, r.get("Name", ""))
             val_cell = ws_front.cell(row_ptr, 3, r["Balance at Date"])
             val_cell.number_format = "#,##0.00"
+            for col in range(1, 4):
+                ws_front.cell(row_ptr, col).fill = entry_fill
             row_ptr += 1
+
+        neg_bottom = row_ptr - 1
+        apply_borders(ws_front, top=neg_top, bottom=neg_bottom, left=1, right=3)
+        row_ptr += 1
+
 
     # 3) Positive balances
     if not positives.empty:
-        ws_front.cell(row_ptr, 1, "Positive balances (400000+):").font = Font(bold=True)
+        pos_top = row_ptr
+        title_cell = ws_front.cell(row_ptr, 1, "Positive balances (400000+):")
+        title_cell.font = Font(bold=True)
+        for c in range(1, 4):
+            ws_front.cell(row_ptr, c).fill = header_fill
         row_ptr += 1
+
         for _, r in positives.iterrows():
             acc = str(r["No."])
             c = ws_front.cell(row_ptr, 1, acc)
@@ -668,7 +724,13 @@ def finalize_workbook_to_bytes(
             ws_front.cell(row_ptr, 2, r.get("Name", ""))
             val_cell = ws_front.cell(row_ptr, 3, r["Balance at Date"])
             val_cell.number_format = "#,##0.00"
+            for col in range(1, 4):
+                ws_front.cell(row_ptr, col).fill = entry_fill
             row_ptr += 1
+
+        pos_bottom = row_ptr - 1
+        apply_borders(ws_front, top=pos_top, bottom=pos_bottom, left=1, right=3)
+
   
     # === Documentation checklist (account-based comments) ===
     doc_rules = [
@@ -768,10 +830,13 @@ def finalize_workbook_to_bytes(
         row_ptr += 1
 
         # Header row
+        # Header row
         headers = ["Account", "Name", "Comment", "Status"]
+        doc_top = row_ptr
         for col_idx, h in enumerate(headers, start=1):
             cell = ws_front.cell(row_ptr, col_idx, h)
             cell.font = Font(bold=True)
+            cell.fill = header_fill
         row_ptr += 1
 
         # Dropdown for "Done"
@@ -787,20 +852,25 @@ def finalize_workbook_to_bytes(
             acc_cell = ws_front.cell(row_ptr, 1, acc)
             set_hyperlink(acc_cell, acc)
 
-            # Name + comment
             ws_front.cell(row_ptr, 2, name)
             ws_front.cell(row_ptr, 3, msg)
 
-            # Status dropdown
             status_cell = ws_front.cell(row_ptr, 4)
             dv.add(status_cell)
 
-            # Conditional formatting: if Status == "Done", make the row green
+            # base fill (will be overridden by CF when Done)
+            for c in range(1, 5):
+                ws_front.cell(row_ptr, c).fill = entry_fill
+
             formula = f'$D{row_ptr}="Done"'
             rule = FormulaRule(formula=[formula], fill=green_fill)
             ws_front.conditional_formatting.add(f"A{row_ptr}:D{row_ptr}", rule)
 
             row_ptr += 1
+
+        doc_bottom = row_ptr - 1
+        apply_borders(ws_front, top=doc_top, bottom=doc_bottom, left=1, right=4)
+
 
     # Footer metadata
     row_ptr += 2
