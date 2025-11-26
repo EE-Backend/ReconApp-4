@@ -628,28 +628,16 @@ def finalize_workbook_to_bytes(
 
     row_ptr = comments_bottom + 2
     
-    # --- ✅ INSERT EE LOGO HERE (Centered in Column B) ✅ ---
+    # --- ✅ INSERT EE LOGO HERE ✅ ---
     logo_path = STATIC_DIR / "logo.png"
     if logo_path.exists():
         try:
             logo = Image(str(logo_path))
-            logo.width = 120
-            logo.height = 120
-
-            # Position anchor cell
-            anchor_cell = "B8"
-
-            # Calculate horizontal offset to center within column B
-            col_width = ws_front.column_dimensions['B'].width or 10
-            # Excel column width ≈ pixels → multiply by ~7
-            col_pixels = col_width * 7
-            x_offset = int((col_pixels - logo.width) / 2)
-
-            ws_front.add_image(logo, anchor_cell)
-            logo.anchor = logo.anchor._replace(colOff=x_offset * 9525)  # 1 pixel = 9525 EMUs
-
+            logo.width = 160   # adjust if needed
+            logo.height = 160
+            ws_front.add_image(logo, "D2")  # position on the sheet
         except Exception:
-            pass
+            pass  # Don't break the app if the logo fails
     # --- ✅ END LOGO BLOCK ✅ ---
 
 
