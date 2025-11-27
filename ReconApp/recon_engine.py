@@ -528,10 +528,12 @@ def add_pl_balance_sheet(wb, trial_balance_df, code_to_meta):
     if abs(unmapped_total) > 0.01:
     
         # ---- GAP ROW ----
+       # Insert gap row before unmapped box (blank white row)
         gap_row = r_ctrl + 1
         for col in range(3, 6):
             gap_cell = ws.cell(gap_row, col, "")
-            gap_cell.fill = entry_fill
+            gap_cell.fill = PatternFill(fill_type=None)   
+
     
         # Box starts 1 row below the gap
         box_top = r_ctrl + 2
