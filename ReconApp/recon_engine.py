@@ -331,6 +331,32 @@ def add_pl_balance_sheet(wb, trial_balance_df, code_to_meta):
             # === STANDARD BEHAVIOR FOR ALL OTHER LINES ===
     
             # Determine fill
+            # === SPECIAL CASE: Total profit inside Equity section ===
+            if code == "TP_EQUITY":
+                # Bold description using entry-fill
+                desc_cell.font = Font(bold=True)
+                desc_cell.fill = entry_fill
+            
+                # Use the P&L Total profit row as value
+                tp_main_row = desc_row["Total profit"]
+                val_cell = ws.cell(row, 4, f"=D{tp_main_row}")
+                val_cell.font = Font(bold=True)
+                val_cell.fill = entry_fill
+                val_cell.number_format = "#,##0.00"
+            
+                # No mapping or hyperlink
+                ws.cell(row, 2, "")
+                tab_cell = ws.cell(row, 5, "")
+                tab_cell.fill = entry_fill
+            
+                # Register row for formula use
+                desc_row[desc] = row
+            
+                row += 1
+                continue
+
+            # === STANDARD MAPPING / HEADER / TOTAL HANDLING BELOW ===
+            
             if code:
                 row_fill = entry_fill
             else:
@@ -338,9 +364,7 @@ def add_pl_balance_sheet(wb, trial_balance_df, code_to_meta):
                     row_fill = total_fill
                 else:
                     row_fill = header_fill
-    
-            desc_cell.fill = row_fill
-            val_cell.fill = row_fill
+
     
             # Column E: Tab
             tab_cell = ws.cell(row, 5)
@@ -459,7 +483,9 @@ def add_pl_balance_sheet(wb, trial_balance_df, code_to_meta):
     r39 = code_row["39"]
 
     # Total equity = SUM(20–23) + Total profit
-    set_formula("Total equity", f"=SUM({d_ref(r20)}:{d_ref(r23)})+{d_ref(r_tp)}")
+    r_tp_equity = desc_row["Total profit"]  # the new one inside Equity
+    set_formula("Total equity", f"=SUM({d_ref(r20)}:{d_ref(r_tp_equity)})")
+
 
     # Total non-current liabilities = SUM(24,25,28,29,30) (contiguous in layout)
     set_formula("Total non-current liabilities", f"=SUM({d_ref(r24)}:{d_ref(r30)})")
