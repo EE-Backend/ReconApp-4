@@ -1123,37 +1123,53 @@ def finalize_workbook_to_bytes(
         apply_borders(ws_front, top=block_top, bottom=block_bottom, left=1, right=5)
         row_ptr += 1  # spacing after block
 
+  
     # === 1b) UNMAPPED ACCOUNTS (RED BLOCK) ===
     if not unmapped_accounts.empty:
         block_top = row_ptr
+    
+        # Header line
         title_cell = ws_front.cell(row_ptr, 1, "Unmapped accounts (no mapping code):")
         title_cell.font = Font(bold=True)
         for c in range(1, 4):
             ws_front.cell(row_ptr, c).fill = red_fill
         row_ptr += 1
-
+    
+        # Column headers
         headers = ["Account", "Name", "TB balance"]
         for col_idx, h in enumerate(headers, start=1):
             cell = ws_front.cell(row_ptr, col_idx, h)
             cell.font = Font(bold=True)
             cell.fill = red_fill
         row_ptr += 1
-
+    
+        # Data rows
         for _, r in unmapped_accounts.iterrows():
             acc = str(r["No."])
-            ws_front.cell(row_ptr, 1, acc)
+    
+            # Account number + hyperlink to the Unmapped tab
+            acc_cell = ws_front.cell(row_ptr, 1, acc)
+            acc_cell.hyperlink = "#'Unmapped'!A1"
+            acc_cell.font = Font(color="0000FF", underline="single")
+            acc_cell.style = "Hyperlink"
+    
+            # Name + Balance
             ws_front.cell(row_ptr, 2, r.get("Name", ""))
             val_cell = ws_front.cell(row_ptr, 3, r["Balance at Date"])
             val_cell.number_format = "#,##0.00"
-
+    
+            # Row formatting
             for c in range(1, 4):
                 ws_front.cell(row_ptr, c).fill = red_fill
-
+    
             row_ptr += 1
-
+    
+        # Apply borders
         block_bottom = row_ptr - 1
         apply_borders(ws_front, top=block_top, bottom=block_bottom, left=1, right=3)
-        row_ptr += 1  # spacing after block
+    
+        row_ptr += 1  # gap after block
+
 
 
     # === 2) NEGATIVE BALANCES ===
