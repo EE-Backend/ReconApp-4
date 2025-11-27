@@ -1256,7 +1256,15 @@ def finalize_workbook_to_bytes(
 
 
 # === PUBLIC: generate_reconciliation_file ===
-def generate_reconciliation_file(trial_balance_file, entries_file, icp_code, mapping_path=None, plc_path=None, tolerance=TOLERANCE, quarter=None):
+def generate_reconciliation_file(
+    trial_balance_file,
+    entries_file,
+    icp_code,
+    mapping_path=None,
+    plc_path=None,
+    tolerance=TOLERANCE,
+    quarter=None,
+):
     """
     Main entrypoint for Streamlit app.
     Inputs trial_balance_file and entries_file may be:
@@ -1270,51 +1278,50 @@ def generate_reconciliation_file(trial_balance_file, entries_file, icp_code, map
     mapping_path = Path(mapping_path) if mapping_path else DEFAULT_MAPPING
     plc_path = Path(plc_path) if plc_path else DEFAULT_PLC
 
-# Read user inputs (pandas handles file-like objects)
-trial_balance = pd.read_excel(trial_balance_file)
-entries = pd.read_excel(entries_file)
+    # Read user inputs (pandas handles file-like objects)
+    trial_balance = pd.read_excel(trial_balance_file)
+    entries = pd.read_excel(entries_file)
 
-# --- 🔧 Normalize column names early ---
-entries.columns = [str(c).strip() for c in entries.columns]
+    # --- 🔧 Normalize column names early ---
+    entries.columns = [str(c).strip() for c in entries.columns]
 
-# Standardize Amount column
-entries.rename(
-    columns=lambda c: "Amount (LCY)"
-    if str(c).strip().lower() in ["amount", "amount (lcy)"]
-    else c,
-    inplace=True,
-)
-
-# Standardize ICP column (accept ICP CODE, ICP Code, icp code, etc.)
-entries.rename(
-    columns=lambda c: "ICP CODE"
-    if str(c).strip().lower() == "icp code"
-    else c,
-    inplace=True,
-)
-
-# Standardize GAAP column (case-insensitive)
-entries.rename(
-    columns=lambda c: "GAAP Code"
-    if str(c).strip().lower() == "gaap code"
-    else c,
-    inplace=True,
-)
-
-# --- ✅ Required columns after normalization ---
-missing = []
-for col in ["G/L Account No.", "Posting Date", "Amount (LCY)", "ICP CODE", "GAAP Code"]:
-    if col not in entries.columns:
-        missing.append(col)
-
-if missing:
-    raise ValueError(
-        "The uploaded All Entries file is missing required column(s): "
-        + ", ".join(missing)
-        + "\n\nPlease upload a correct All Entries file and try again."
+    # Standardize Amount column: "Amount" or "Amount (LCY)" → "Amount (LCY)"
+    entries.rename(
+        columns=lambda c: "Amount (LCY)"
+        if str(c).strip().lower() in ["amount", "amount (lcy)"]
+        else c,
+        inplace=True,
     )
 
+    # Standardize ICP column: "ICP CODE" or "ICP Code" → "ICP CODE"
+    entries.rename(
+        columns=lambda c: "ICP CODE"
+        if str(c).strip().lower() == "icp code"
+        else c,
+        inplace=True,
+    )
 
+    # Standardize GAAP column: any case variant → "GAAP Code"
+    entries.rename(
+        columns=lambda c: "GAAP Code"
+        if str(c).strip().lower() == "gaap code"
+        else c,
+        inplace=True,
+    )
+
+    # --- ✅ Required columns AFTER normalization ---
+    missing = []
+    required_cols = ["G/L Account No.", "Posting Date", "Amount (LCY)", "ICP CODE", "GAAP Code"]
+    for col in required_cols:
+        if col not in entries.columns:
+            missing.append(col)
+
+    if missing:
+        raise ValueError(
+            "The uploaded All Entries file is missing required column(s): "
+            + ", ".join(missing)
+            + "\n\nPlease upload a correct All Entries file and try again."
+        )
 
     # Load mapping tables
     acct_to_code, code_to_meta, map_dir = load_mapping(mapping_path)
@@ -1322,17 +1329,23 @@ if missing:
     # Apply mapping to trial balance
     trial_balance = apply_mapping(trial_balance, acct_to_code, code_to_meta)
 
-
     # Cast types & normalize
     trial_balance["Balance at Date"] = trial_balance["Balance at Date"].apply(to_float)
     entries["G/L Account No."] = entries["G/L Account No."].apply(normalize_account)
     entries["Amount (LCY)"] = entries["Amount (LCY)"].apply(to_float)
+
     # Remove timestamps: keep date only (pandas -> datetime.date)
     entries["Posting Date"] = pd.to_datetime(entries["Posting Date"], errors="coerce").dt.date
 
     # Build workbook
     wb, sheet_status, account_anchor, mismatch_accounts = build_workbook(
-        trial_balance, entries, map_dir, acct_to_code, code_to_meta, icp_code, tolerance=tolerance
+        trial_balance,
+        entries,
+        map_dir,
+        acct_to_code,
+        code_to_meta,
+        icp_code,
+        tolerance=tolerance,
     )
 
     # Finalize & get bytes
@@ -1348,4 +1361,6 @@ if missing:
         mismatch_accounts=mismatch_accounts,
         quarter=quarter,
     )
+
     return bio
+
